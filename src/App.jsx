@@ -41,8 +41,10 @@ export default function App() {
 
   const [currentAccount, setCurrentAccount] = useState("");
   const [totalWaves, setTotalWaves] = useState("Fetching...")
+  const [allWaves, setAllWaves] = useState([]);
+  const [message, setMessage] = useState("");
 
-  const contractAddress = "0x9470656d182f3AFb050dA14D7e53Ada0FBE68A58";
+  const contractAddress = "0xF89bF35E131F2ffEdAAC24CEB04d0CF9c3C9a574";
   const contractABI = abi.abi;
 
   const connectWallet = async () => {
@@ -78,7 +80,7 @@ export default function App() {
       const waveAtPandaContract = new ethers.Contract(contractAddress, contractABI, signer);
 
       let count = await waveAtPandaContract.getTotalWaves();
-      console.log({count: count.toNumber})
+      console.log({count: count.toNumber()})
       return count.toNumber();
       
     } catch(error) {
@@ -88,6 +90,12 @@ export default function App() {
 
   const wave = async () => {
     try {
+
+      if(message.trim()==="") {
+        alert("Message cant be empty")
+        return;
+      }
+      
       const {ethereum} = window;
 
       if(!ethereum) {
@@ -99,22 +107,48 @@ export default function App() {
       const signer = provider.getSigner();
       const waveAtPandaContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-      let count = await waveAtPandaContract.getTotalWaves();
-      console.log("Retrieved total wave count...", count.toNumber());
-
-      // Executing the actual wave funtion from the smart contract
-      const waveTxn = await waveAtPandaContract.wave();
+      const waveTxn = await waveAtPandaContract.wave(message);
       console.log("Mining......",waveTxn.hash);
 
       await waveTxn.wait();
       console.log("Mined -- ", waveTxn.hash);
 
-      count = await waveAtPandaContract.getTotalWaves();
-      console.log("Retrieved total wave count...", count.toNumber());
-      setTotalWaves(count.toNumber());
+      await getAllWaves();
+
+      setMessage("");
       
     } catch(error) {
       console.error({error})
+    }
+  }
+
+ const getAllWaves = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const waveAtPandaContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const waves = await waveAtPandaContract.getAllWaves();
+        
+        let wavesCleaned = [];
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000),
+            message: wave.message
+          });
+        });
+
+        console.log({wavesCleaned})
+
+        setAllWaves(wavesCleaned);
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.error({error});
     }
   }
 
@@ -124,9 +158,10 @@ export default function App() {
       setCurrentAccount(account);
     }
     const waveCount = await fetchTotalWaves();
-    if(waveCount) {
+    if(waveCount !== null) {
       setTotalWaves(waveCount);
     }
+    await getAllWaves();
   },[])
   
   return (
@@ -139,6 +174,10 @@ export default function App() {
 
         <div className="bio">
         Welcome to PandaVerse
+        </div>
+
+        <div className="waveMessage">
+         <textarea rows="10" cols = "40" value={message} onChange={e=>setMessage(e.target.value)}/>
         </div>
 
         <button className="waveButton" onClick={wave}>
@@ -157,6 +196,15 @@ export default function App() {
         <div className="totalWaves">
          👋: {totalWaves}
         </div>
+
+        {allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>)
+        })}
       </div>
     </div>
   );
