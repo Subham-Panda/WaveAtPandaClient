@@ -40,6 +40,7 @@ const findMetaMaskAccount = async () => {
 export default function App() {
 
   const [currentAccount, setCurrentAccount] = useState("");
+  const [totalWaves, setTotalWaves] = useState("Fetching...")
 
   const contractAddress = "0x9470656d182f3AFb050dA14D7e53Ada0FBE68A58";
   const contractABI = abi.abi;
@@ -60,6 +61,28 @@ export default function App() {
       setCurrentAccount(accounts[0]);
     } catch(error) {
       console.error(error);
+    }
+  }
+
+  const fetchTotalWaves = async () => {
+    try {
+      const {ethereum} = window;
+
+      if(!ethereum) {
+        console.log("Ethereum object doesnt exist");
+        return null;
+      } 
+
+      const provider = new ethers.providers.Web3Provider(ethereum);
+      const signer = provider.getSigner();
+      const waveAtPandaContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+      let count = await waveAtPandaContract.getTotalWaves();
+      console.log({count: count.toNumber})
+      return count.toNumber();
+      
+    } catch(error) {
+      console.error({error})
     }
   }
 
@@ -88,6 +111,7 @@ export default function App() {
 
       count = await waveAtPandaContract.getTotalWaves();
       console.log("Retrieved total wave count...", count.toNumber());
+      setTotalWaves(coun.toNumber());
       
     } catch(error) {
       console.error({error})
@@ -98,6 +122,10 @@ export default function App() {
     const account = await findMetaMaskAccount();
     if(account !== null) {
       setCurrentAccount(account);
+    }
+    const waveCount = await fetchTotalWaves();
+    if(waveCount) {
+      setTotalWaves(waveCount);
     }
   },[])
   
@@ -127,7 +155,7 @@ export default function App() {
         )}
 
         <div className="totalWaves">
-          {totalWaves}
+         👋: {totalWaves}
         </div>
       </div>
     </div>
