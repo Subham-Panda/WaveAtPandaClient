@@ -113,6 +113,9 @@ export default function App() {
       await waveTxn.wait();
       console.log("Mined -- ", waveTxn.hash);
 
+      let count = await waveAtPandaContract.getTotalWaves();
+      setTotalWaves(count.toNumber())
+
       await getAllWaves();
 
       setMessage("");
@@ -170,10 +173,6 @@ export default function App() {
       <div className="dataContainer">
         <div className="header">
         👋 Hey there!
-        </div>
-
-        <div className="bio">
-        Welcome to PandaVerse
         </div>
 
         <div className="waveMessage">
