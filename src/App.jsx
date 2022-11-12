@@ -44,7 +44,7 @@ export default function App() {
   const [allWaves, setAllWaves] = useState([]);
   const [message, setMessage] = useState("");
 
-  const contractAddress = "0xF89bF35E131F2ffEdAAC24CEB04d0CF9c3C9a574";
+  const contractAddress = "0x11465F47989697127C22E0A574172b50FBD66a3E";
   const contractABI = abi.abi;
 
   const connectWallet = async () => {
@@ -107,16 +107,11 @@ export default function App() {
       const signer = provider.getSigner();
       const waveAtPandaContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-      const waveTxn = await waveAtPandaContract.wave(message);
+      const waveTxn = await waveAtPandaContract.wave(message, { gasLimit: 300000 });
       console.log("Mining......",waveTxn.hash);
 
       await waveTxn.wait();
       console.log("Mined -- ", waveTxn.hash);
-
-      let count = await waveAtPandaContract.getTotalWaves();
-      setTotalWaves(count.toNumber())
-
-      await getAllWaves();
 
       setMessage("");
       
@@ -156,6 +151,32 @@ export default function App() {
   }
 
   useEffect(async () => {
+
+    let waveAtPandaContract;
+
+    const onNewWave = (from, timestamp, msg) => {
+      console.log("NewWave", from, timestamp, msg);
+      setAllWaves(prevState => [
+        ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message: msg
+        }
+      ])
+      setTotalWaves(prevState => prevState + 1)
+    }
+
+    if(window.ethereum) {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      const waveAtPandaContract = new ethers.Contract(contractAddress, contractABI, signer);
+      waveAtPandaContract.on("NewWave", onNewWave)
+    }
+
+
+    
     const account = await findMetaMaskAccount();
     if(account !== null) {
       setCurrentAccount(account);
