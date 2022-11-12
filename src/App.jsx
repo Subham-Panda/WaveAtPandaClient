@@ -111,7 +111,7 @@ export default function App() {
 
       count = await waveAtPandaContract.getTotalWaves();
       console.log("Retrieved total wave count...", count.toNumber());
-      setTotalWaves(coun.toNumber());
+      setTotalWaves(count.toNumber());
       
     } catch(error) {
       console.error({error})
